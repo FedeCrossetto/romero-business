@@ -1,4 +1,4 @@
-import { X, ShoppingBag, ArrowRight, Truck, CheckCircle } from 'lucide-react'
+import { X, ShoppingBag, ArrowRight, Truck, CheckCircle, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useCartStore } from '@/store/cart'
 import { useSettings } from '@/hooks/useSettings'
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { formatPrice } from '@/lib/utils'
 
 export function CartDrawer() {
-  const { items, isOpen, closeCart, total } = useCartStore()
+  const { items, isOpen, closeCart, total, clearCart } = useCartStore()
   const { settings } = useSettings()
   const navigate = useNavigate()
 
@@ -49,13 +49,29 @@ export function CartDrawer() {
               </span>
             )}
           </div>
-          <button
-            onClick={closeCart}
-            className="p-2 rounded-full hover:bg-gray-100 transition"
-            aria-label="Cerrar"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            {items.length > 0 && (
+              <button
+                onClick={() => {
+                  if (confirm('¿Vaciar el carrito? Se eliminarán todos los productos.')) {
+                    clearCart()
+                  }
+                }}
+                className="p-1.5 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition"
+                aria-label="Vaciar carrito"
+                title="Vaciar carrito"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              onClick={closeCart}
+              className="p-2 rounded-full hover:bg-gray-100 transition"
+              aria-label="Cerrar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Items */}

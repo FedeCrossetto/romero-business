@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LogOut, Package, Settings } from 'lucide-react'
+import { LogOut, Package, Settings, Tag, LayoutDashboard, ChevronRight, BarChart2 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { to: '/admin', label: 'Productos', icon: Package },
+  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { to: '/admin/products', label: 'Productos', icon: Package },
+  { to: '/admin/categories', label: 'Categorías', icon: Tag },
+  { to: '/admin/finanzas', label: 'Finanzas', icon: BarChart2 },
   { to: '/admin/settings', label: 'Configuración', icon: Settings },
 ]
 
@@ -20,45 +22,83 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     navigate('/admin/login')
   }
 
+  const initials = user?.email?.slice(0, 2).toUpperCase() ?? 'AD'
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 font-bold text-primary-700">
-              <img src="/logo.png" alt="Romero & Co" className="h-8 w-8 object-contain" />
-              <span className="hidden sm:inline">Romero · Admin</span>
-            </div>
-            <nav className="flex items-center gap-1">
-              {navItems.map(({ to, label, icon: Icon }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition',
-                    location.pathname === to
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100',
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </Link>
-              ))}
+      <header className="bg-gray-900 sticky top-0 z-30 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+
+          {/* Brand */}
+          <div className="flex items-center gap-5 min-w-0">
+            <Link to="/admin" className="flex items-center gap-2.5 shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-primary-600 flex items-center justify-center shadow-md">
+                <img src="/logo.png" alt="" className="w-6 h-6 object-contain" />
+              </div>
+              <div className="hidden sm:block">
+                <span className="text-white font-bold text-sm tracking-tight">Romero</span>
+                <span className="ml-1.5 text-[10px] font-semibold bg-primary-500/30 text-primary-300 border border-primary-500/40 px-1.5 py-0.5 rounded-full uppercase tracking-widest">
+                  Admin
+                </span>
+              </div>
+            </Link>
+
+            {/* Separator */}
+            <ChevronRight className="h-4 w-4 text-gray-600 hidden sm:block shrink-0" />
+
+            {/* Nav */}
+            <nav className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
+              {navItems.map(({ to, label, icon: Icon, exact }) => {
+                const active = exact ? location.pathname === to : location.pathname.startsWith(to)
+                return (
+                  <Link
+                    key={to}
+                    to={to}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150',
+                      active
+                        ? 'bg-white/10 text-white'
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-white/5',
+                    )}
+                  >
+                    <Icon className={cn('h-3.5 w-3.5 shrink-0', active && 'text-primary-400')} />
+                    <span className="hidden sm:inline">{label}</span>
+                  </Link>
+                )
+              })}
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-400 hidden md:block">{user?.email}</span>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Salir</span>
-            </Button>
+          {/* Right */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Ver tienda */}
+            <Link
+              to="/"
+              target="_blank"
+              className="hidden md:flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-200 transition-colors px-2 py-1.5 rounded-lg hover:bg-white/5"
+            >
+              Ver tienda
+            </Link>
+
+            {/* Avatar + logout */}
+            <div className="flex items-center gap-2 bg-white/5 rounded-xl px-2 py-1.5">
+              <div className="w-6 h-6 rounded-full bg-primary-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                {initials}
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors"
+                title="Cerrar sesión"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Salir</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">{children}</div>
+      <div className="max-w-7xl mx-auto px-4 py-8">{children}</div>
     </div>
   )
 }

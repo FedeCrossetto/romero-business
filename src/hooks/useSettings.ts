@@ -9,6 +9,8 @@ const defaultSettings: Settings = {
   free_shipping_threshold: '20000',
   business_address: '',
   business_hours: 'Lun-Sáb 8:00 a 20:00',
+  announcement_active: 'false',
+  announcement_text: '',
 }
 
 export function useSettings() {

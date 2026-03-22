@@ -32,6 +32,8 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
     name: product?.name ?? '',
     description: product?.description ?? '',
     price: product?.price?.toString() ?? '',
+    discount_price: product?.discount_price?.toString() ?? '',
+    promo_until: product?.promo_until ? product.promo_until.slice(0, 10) : '',
     unit_type: (product?.unit_type ?? 'kg') as UnitType,
     stock: product?.stock?.toString() ?? '0',
     image_url: product?.image_url ?? '',
@@ -73,6 +75,8 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
       slug: slugify(form.name),
       description: form.description || null,
       price: parseFloat(form.price),
+      discount_price: form.discount_price ? parseFloat(form.discount_price) : null,
+      promo_until: form.promo_until || null,
       unit_type: form.unit_type,
       stock: parseFloat(form.stock),
       image_url: form.image_url || null,
@@ -146,6 +150,32 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
               value={form.stock}
               onChange={(e) => set('stock', e.target.value)}
             />
+          </div>
+
+          {/* Promo */}
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              id="discount_price"
+              label="Precio oferta"
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.discount_price}
+              onChange={(e) => set('discount_price', e.target.value)}
+              placeholder="Dejar vacío si no hay oferta"
+            />
+            <div className="flex flex-col gap-1">
+              <label htmlFor="promo_until" className="text-sm font-medium text-gray-700">
+                Oferta válida hasta
+              </label>
+              <input
+                id="promo_until"
+                type="date"
+                value={form.promo_until}
+                onChange={(e) => set('promo_until', e.target.value)}
+                className="rounded-2xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

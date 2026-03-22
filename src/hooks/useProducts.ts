@@ -65,6 +65,34 @@ export function useProducts(options: UseProductsOptions = {}) {
   return { products, loading, error, refetch: () => {} }
 }
 
+export function useProduct(slug: string) {
+  const [product, setProduct] = useState<Product | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!slug) return
+    let cancelled = false
+    async function fetch() {
+      setLoading(true)
+      const { data, error: err } = await supabase
+        .from('products')
+        .select('*, categories(id, name, slug, sort_order, created_at)')
+        .eq('slug', slug)
+        .eq('is_active', true)
+        .single()
+      if (cancelled) return
+      if (err) { setError(err.message) }
+      else { setProduct(data as Product) }
+      setLoading(false)
+    }
+    fetch()
+    return () => { cancelled = true }
+  }, [slug])
+
+  return { product, loading, error }
+}
+
 export function useAllProducts() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)

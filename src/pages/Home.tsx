@@ -1,10 +1,11 @@
-import { Link } from 'react-router-dom'
-import { ArrowRight, Truck, Leaf, Clock, Star } from 'lucide-react'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ArrowRight, Truck, Leaf, Clock, Star, Search } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { ProductCard } from '@/features/products/ProductCard'
+import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll'
 import { useProducts } from '@/hooks/useProducts'
-import { useSettings } from '@/hooks/useSettings'
-import { PageSpinner } from '@/components/ui/Spinner'
+import { SkeletonGrid } from '@/components/ui/Skeleton'
 
 const benefits = [
   { icon: Leaf, title: 'Productos frescos', desc: 'Seleccionados diariamente del mercado.' },
@@ -15,7 +16,13 @@ const benefits = [
 
 export function Home() {
   const { products, loading } = useProducts({ featured: true })
-  const { settings } = useSettings()
+  const navigate = useNavigate()
+  const [heroSearch, setHeroSearch] = useState('')
+
+  function handleHeroSearch(e: React.FormEvent) {
+    e.preventDefault()
+    navigate('/catalogo', { state: { search: heroSearch.trim() } })
+  }
 
   return (
     <>
@@ -32,12 +39,33 @@ export function Home() {
               Frescos todos los días
             </div>
             <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-6">
-              Verduras y frutas<br />
-              <span className="text-accent-300">para tu mesa</span>
+              Calidad de verdulería<br />
+              <span className="text-accent-300">premium a precio de barrio</span>
             </h1>
             <p className="text-lg text-primary-100 mb-8 max-w-lg">
               Pedí online y recibí en tu casa. Sin apps, sin complicaciones — solo mandás un WhatsApp y listo.
             </p>
+
+            {/* Hero search */}
+            <form onSubmit={handleHeroSearch} className="flex gap-2 max-w-md mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/60" />
+                <input
+                  type="text"
+                  value={heroSearch}
+                  onChange={(e) => setHeroSearch(e.target.value)}
+                  placeholder="¿Qué estás buscando?"
+                  className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/20 backdrop-blur border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 text-sm"
+                />
+              </div>
+              <button
+                type="submit"
+                className="bg-white text-primary-700 font-semibold px-5 py-3 rounded-2xl hover:bg-primary-50 transition-colors text-sm shrink-0"
+              >
+                Buscar
+              </button>
+            </form>
+
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 size="lg"
@@ -45,7 +73,7 @@ export function Home() {
                 className="text-base font-bold"
                 onClick={() => document.getElementById('destacados')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                Ver productos
+                Ver destacados
                 <ArrowRight className="h-5 w-5" />
               </Button>
               <Link to="/catalogo">
@@ -57,10 +85,10 @@ export function Home() {
           </div>
         </div>
 
-        {/* Wave bottom */}
+        {/* Wave */}
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 60L1440 60L1440 20C1080 60 360 0 0 40L0 60Z" fill="#f9fafb" />
+            <path d="M0 60L1440 60L1440 20C1080 60 360 0 0 40L0 60Z" fill="currentColor" className="text-gray-50 dark:text-gray-950" />
           </svg>
         </div>
       </section>
@@ -68,40 +96,46 @@ export function Home() {
       {/* Benefits */}
       <section className="max-w-6xl mx-auto px-4 py-16">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-          {benefits.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="bg-white rounded-3xl p-5 shadow-card text-center flex flex-col items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-primary-50 flex items-center justify-center">
-                <Icon className="h-6 w-6 text-primary-600" />
+          {benefits.map(({ icon: Icon, title, desc }, i) => (
+            <AnimateOnScroll key={title} delay={i * 100}>
+              <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-card text-center flex flex-col items-center gap-3 h-full">
+                <div className="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center">
+                  <Icon className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{title}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{desc}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-gray-900 text-sm">{title}</p>
-                <p className="text-xs text-gray-500 mt-1">{desc}</p>
-              </div>
-            </div>
+            </AnimateOnScroll>
           ))}
         </div>
       </section>
 
       {/* Featured products */}
       <section id="destacados" className="max-w-6xl mx-auto px-4 pb-16">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Productos destacados</h2>
-            <p className="text-gray-500 mt-1">Lo mejor de hoy, seleccionado para vos</p>
+        <AnimateOnScroll>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Productos destacados</h2>
+              <p className="text-gray-500 dark:text-gray-400 mt-1">Lo mejor de hoy, seleccionado para vos</p>
+            </div>
+            <Link to="/catalogo" className="text-primary-600 font-semibold text-sm flex items-center gap-1 hover:gap-2 transition-all">
+              Ver todo <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-          <Link to="/catalogo" className="text-primary-600 font-semibold text-sm flex items-center gap-1 hover:gap-2 transition-all">
-            Ver todo <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
+        </AnimateOnScroll>
 
         {loading ? (
-          <PageSpinner />
+          <SkeletonGrid count={4} />
         ) : products.length === 0 ? (
           <p className="text-gray-400 text-center py-12">No hay productos disponibles.</p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products.slice(0, 8).map((p) => (
-              <ProductCard key={p.id} product={p} />
+            {products.slice(0, 8).map((p, i) => (
+              <AnimateOnScroll key={p.id} delay={i * 60}>
+                <ProductCard product={p} />
+              </AnimateOnScroll>
             ))}
           </div>
         )}
@@ -109,18 +143,20 @@ export function Home() {
 
       {/* CTA Banner */}
       <section className="max-w-6xl mx-auto px-4 pb-20">
-        <div className="bg-gradient-to-r from-accent-500 to-accent-600 rounded-3xl p-8 md:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <h3 className="text-2xl font-bold mb-2">¿Querés hacer tu pedido ahora?</h3>
-            <p className="text-accent-100">Revisá el catálogo completo y armá tu pedido en minutos.</p>
+        <AnimateOnScroll>
+          <div className="bg-gradient-to-r from-accent-500 to-accent-600 rounded-3xl p-8 md:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <h3 className="text-2xl font-bold mb-2">¿Querés hacer tu pedido ahora?</h3>
+              <p className="text-accent-100">Revisá el catálogo completo y armá tu pedido en minutos.</p>
+            </div>
+            <Link to="/catalogo">
+              <Button size="lg" className="bg-white text-accent-700 hover:bg-accent-50 shrink-0">
+                Ir al catálogo
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+            </Link>
           </div>
-          <Link to="/catalogo">
-            <Button size="lg" className="bg-white text-accent-700 hover:bg-accent-50 shrink-0">
-              Ir al catálogo
-              <ArrowRight className="h-5 w-5" />
-            </Button>
-          </Link>
-        </div>
+        </AnimateOnScroll>
       </section>
     </>
   )

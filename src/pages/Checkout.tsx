@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { MessageCircle, ArrowLeft, MapPin, Store, Truck, CheckCircle } from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
+import { MessageCircle, ArrowLeft, MapPin, Store, Truck, CheckCircle, Clock } from 'lucide-react'
 import { useCartStore } from '@/store/cart'
 import { useSettings } from '@/hooks/useSettings'
+import { useOrderHistory } from '@/store/orderHistory'
+import { useSavedList } from '@/store/savedList'
 import { buildWhatsAppMessage, openWhatsApp } from '@/lib/whatsapp'
 import { formatPrice, cn } from '@/lib/utils'
 import { Input, Textarea } from '@/components/ui/Input'
@@ -21,6 +23,8 @@ const INITIAL_FORM: CheckoutFormData = {
 export function Checkout() {
   const { items, total, clearCart } = useCartStore()
   const { settings } = useSettings()
+  const { addOrder } = useOrderHistory()
+  const { saveList } = useSavedList()
   const navigate = useNavigate()
   const [form, setForm] = useState<CheckoutFormData>(INITIAL_FORM)
   const [errors, setErrors] = useState<Partial<CheckoutFormData>>({})
@@ -52,6 +56,7 @@ export function Checkout() {
     if (!validate()) return
     const message = buildWhatsAppMessage(items, form, settings.business_name)
     openWhatsApp(settings.whatsapp_number, message)
+    addOrder(items, form, orderTotal)
     clearCart()
     navigate('/', { replace: true })
   }
@@ -69,13 +74,22 @@ export function Checkout() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-8 transition"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Volver
-      </button>
+      <div className="flex items-center justify-between mb-8">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Volver
+        </button>
+        <Link
+          to="/mis-pedidos"
+          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-primary-600 transition-colors"
+        >
+          <Clock className="h-4 w-4" />
+          Ver mis pedidos
+        </Link>
+      </div>
 
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Confirmar pedido</h1>
 
@@ -205,6 +219,14 @@ export function Checkout() {
             <MessageCircle className="h-5 w-5" />
             Enviar pedido por WhatsApp
           </Button>
+
+          <button
+            type="button"
+            onClick={() => { saveList(items); alert('¡Lista guardada! La próxima vez podés repetirla desde "Mis pedidos".') }}
+            className="w-full text-sm text-gray-400 hover:text-primary-600 transition-colors py-1"
+          >
+            Guardar como lista habitual
+          </button>
 
           <p className="text-xs text-center text-gray-400 px-2">
             Al tocar el botón se abrirá WhatsApp con tu pedido listo para enviar. Los precios son estimados y pueden variar según disponibilidad.

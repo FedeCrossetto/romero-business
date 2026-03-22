@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
-import { X, Send, MessageCircle } from 'lucide-react'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { X, Send } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
 import { openWhatsApp } from '@/lib/whatsapp'
+import { formatPrice } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import type { Settings } from '@/types'
 
 interface Message {
   id: number
@@ -16,100 +18,131 @@ interface Option {
   value: string
 }
 
-const FAQ: Record<string, { answer: string; options?: Option[] }> = {
-  horarios: {
-    answer: '🕐 Nuestro horario de atención es *Lunes a Sábado de 8:00 a 20:00hs* y *Domingos de 9:00 a 14:00hs*.',
-    options: [
-      { label: '¿Hacen envíos?', value: 'envios' },
-      { label: '¿Cómo hago un pedido?', value: 'pedido' },
-      { label: 'Hablar con el vendedor', value: 'whatsapp' },
-    ],
-  },
-  envios: {
-    answer: '🚚 ¡Sí! Hacemos envíos a domicilio de *Lunes a Sábado*. El costo de envío depende de la zona. Pedidos mayores a $5.000 tienen *envío gratis*.',
-    options: [
-      { label: '¿Cuánto tarda el envío?', value: 'demora' },
-      { label: '¿Monto mínimo de pedido?', value: 'minimo' },
-      { label: 'Hablar con el vendedor', value: 'whatsapp' },
-    ],
-  },
-  demora: {
-    answer: '⏱ El envío demora entre *30 y 90 minutos* dependiendo de la zona y la cantidad de pedidos del día.',
-    options: [
-      { label: '¿Cómo hago un pedido?', value: 'pedido' },
-      { label: '¿Medios de pago?', value: 'pagos' },
-      { label: 'Hablar con el vendedor', value: 'whatsapp' },
-    ],
-  },
-  pedido: {
-    answer: '🛒 Es muy fácil:\n1. Elegís tus productos en el catálogo\n2. Los agregás al carrito\n3. Completás tus datos\n4. ¡Nos mandás el pedido por WhatsApp!',
-    options: [
-      { label: 'Ver catálogo', value: 'catalogo' },
-      { label: '¿Hacen envíos?', value: 'envios' },
-      { label: 'Hablar con el vendedor', value: 'whatsapp' },
-    ],
-  },
-  minimo: {
-    answer: '💰 El monto mínimo de pedido para envío es de *$2.000*. Para retiro en local no hay mínimo.',
-    options: [
-      { label: '¿Cómo hago un pedido?', value: 'pedido' },
-      { label: '¿Medios de pago?', value: 'pagos' },
-      { label: 'Hablar con el vendedor', value: 'whatsapp' },
-    ],
-  },
-  pagos: {
-    answer: '💳 Aceptamos *efectivo* y *transferencia bancaria*. Por el momento no procesamos pagos con tarjeta online.',
-    options: [
-      { label: '¿Hacen envíos?', value: 'envios' },
-      { label: '¿Cómo hago un pedido?', value: 'pedido' },
-      { label: 'Hablar con el vendedor', value: 'whatsapp' },
-    ],
-  },
-  organicos: {
-    answer: '🌿 Trabajamos con productos frescos seleccionados diariamente. Algunos productos son de origen orgánico y están indicados en el catálogo.',
-    options: [
-      { label: '¿Cómo hago un pedido?', value: 'pedido' },
-      { label: '¿Tienen delivery?', value: 'envios' },
-      { label: 'Hablar con el vendedor', value: 'whatsapp' },
-    ],
-  },
-  catalogo: {
-    answer: '📦 Podés ver todos nuestros productos frescos del día en el catálogo. ¡Actualizamos stock todos los días!',
-    options: [
-      { label: '¿Cómo hago un pedido?', value: 'pedido' },
-      { label: 'Hablar con el vendedor', value: 'whatsapp' },
-    ],
-  },
-  whatsapp: {
-    answer: '📲 Te voy a conectar con nuestro vendedor ahora mismo. ¡Un momento!',
-  },
+// FAQ construido dinámicamente con los datos reales de settings
+function buildFAQ(s: Settings): Record<string, { answer: string; options?: Option[] }> {
+  const threshold = parseFloat(s.free_shipping_threshold) || 0
+  const deliveryFee = parseFloat(s.delivery_fee) || 0
+  const hasAddress = s.business_address?.trim()
+
+  return {
+    horarios: {
+      answer: s.business_hours
+        ? `🕐 Nuestro horario de atención es *${s.business_hours}*.`
+        : '🕐 Consultanos por WhatsApp para conocer nuestros horarios actualizados.',
+      options: [
+        { label: '🚚 ¿Hacen envíos?', value: 'envios' },
+        { label: '📍 ¿Dónde están?', value: 'ubicacion' },
+        { label: '💬 Hablar con el vendedor', value: 'whatsapp' },
+      ],
+    },
+    envios: {
+      answer: deliveryFee > 0
+        ? `🚚 ¡Sí! Hacemos envíos a domicilio. El costo de envío es de *${formatPrice(deliveryFee)}*.\n${threshold > 0 ? `Pedidos que superen *${formatPrice(threshold)}* tienen *envío gratis* 🎉` : ''}`
+        : `🚚 ¡Sí! Hacemos envíos a domicilio${threshold > 0 ? `. Pedidos que superen *${formatPrice(threshold)}* tienen *envío gratis* 🎉` : '.'}`,
+      options: [
+        { label: '⏱ ¿Cuánto tarda?', value: 'demora' },
+        { label: '📍 ¿Dónde están?', value: 'ubicacion' },
+        { label: '💬 Hablar con el vendedor', value: 'whatsapp' },
+      ],
+    },
+    demora: {
+      answer: '⏱ El envío demora entre *30 y 90 minutos* dependiendo de la zona y la demanda del día.',
+      options: [
+        { label: '🛒 ¿Cómo hago un pedido?', value: 'pedido' },
+        { label: '💳 Medios de pago', value: 'pagos' },
+        { label: '💬 Hablar con el vendedor', value: 'whatsapp' },
+      ],
+    },
+    pedido: {
+      answer: '🛒 Es muy fácil:\n1. Elegís tus productos en el catálogo\n2. Los agregás al carrito\n3. Completás tus datos\n4. ¡Nos mandás el pedido por WhatsApp!',
+      options: [
+        { label: 'Ver catálogo', value: 'catalogo' },
+        { label: '🚚 ¿Hacen envíos?', value: 'envios' },
+        { label: '💬 Hablar con el vendedor', value: 'whatsapp' },
+      ],
+    },
+    minimo: {
+      answer: threshold > 0
+        ? `💰 No hay un monto mínimo de pedido para retiro en local. Para *envío a domicilio*, el pedido debe ser mayor a *${formatPrice(threshold / 4)}* aproximadamente — consultanos por WhatsApp para tu caso particular.`
+        : '💰 No hay monto mínimo de pedido. Para retiro en local podés pedir lo que necesitás.',
+      options: [
+        { label: '🛒 ¿Cómo hago un pedido?', value: 'pedido' },
+        { label: '💳 Medios de pago', value: 'pagos' },
+        { label: '💬 Hablar con el vendedor', value: 'whatsapp' },
+      ],
+    },
+    pagos: {
+      answer: '💳 Aceptamos *efectivo* y *transferencia bancaria*. Por el momento no procesamos pagos con tarjeta online.',
+      options: [
+        { label: '🚚 ¿Hacen envíos?', value: 'envios' },
+        { label: '🛒 ¿Cómo hago un pedido?', value: 'pedido' },
+        { label: '💬 Hablar con el vendedor', value: 'whatsapp' },
+      ],
+    },
+    ubicacion: {
+      answer: hasAddress
+        ? `📍 Estamos ubicados en *${s.business_address}*.\n\n${s.business_hours ? `Horario: *${s.business_hours}*` : ''}\n\nPodés venir a retirar tu pedido o coordinar el envío a domicilio.`
+        : '📍 Consultanos la dirección por WhatsApp y te la enviamos al instante.',
+      options: [
+        { label: '🕐 Horarios', value: 'horarios' },
+        { label: '🚚 ¿Hacen envíos?', value: 'envios' },
+        { label: '💬 Hablar con el vendedor', value: 'whatsapp' },
+      ],
+    },
+    organicos: {
+      answer: '🌿 Trabajamos con productos frescos seleccionados diariamente. Algunos son de origen orgánico y están indicados en el catálogo.',
+      options: [
+        { label: '🛒 ¿Cómo hago un pedido?', value: 'pedido' },
+        { label: '🚚 ¿Tienen delivery?', value: 'envios' },
+        { label: '💬 Hablar con el vendedor', value: 'whatsapp' },
+      ],
+    },
+    catalogo: {
+      answer: '📦 Podés ver todos nuestros productos frescos del día en el catálogo. ¡Actualizamos el stock todos los días!',
+      options: [
+        { label: '🛒 ¿Cómo hago un pedido?', value: 'pedido' },
+        { label: '💬 Hablar con el vendedor', value: 'whatsapp' },
+      ],
+    },
+    whatsapp: {
+      answer: '📲 Te voy a conectar con nuestro vendedor ahora mismo. ¡Un momento!',
+    },
+  }
 }
 
 const INITIAL_OPTIONS: Option[] = [
   { label: '🕐 Horarios de atención', value: 'horarios' },
   { label: '🚚 ¿Hacen envíos?', value: 'envios' },
+  { label: '📍 ¿Dónde están ubicados?', value: 'ubicacion' },
   { label: '🛒 ¿Cómo hago un pedido?', value: 'pedido' },
-  { label: '💰 Monto mínimo', value: 'minimo' },
+  { label: '💰 Costo de envío', value: 'minimo' },
   { label: '💳 Medios de pago', value: 'pagos' },
   { label: '🌿 ¿Tienen orgánicos?', value: 'organicos' },
   { label: '💬 Hablar con el vendedor', value: 'whatsapp' },
 ]
 
-const GREETING: Message = {
-  id: 0,
-  from: 'bot',
-  text: '¡Hola! 👋 Soy el asistente de *Romero & Co*. ¿En qué te puedo ayudar?',
-  options: INITIAL_OPTIONS,
-}
-
 let nextId = 1
 
 export function WhatsAppChat() {
+  const { settings } = useSettings()
+  const faq = useMemo(() => buildFAQ(settings), [settings])
+
+  const greeting: Message = useMemo(() => ({
+    id: 0,
+    from: 'bot',
+    text: `¡Hola! 👋 Soy el asistente de *${settings.business_name || 'Romero & Co'}*. ¿En qué te puedo ayudar?`,
+    options: INITIAL_OPTIONS,
+  }), [settings.business_name])
+
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([GREETING])
+  const [messages, setMessages] = useState<Message[]>([greeting])
   const [pulse, setPulse] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const { settings } = useSettings()
+
+  // Update greeting when settings load
+  useEffect(() => {
+    setMessages([greeting])
+  }, [greeting])
 
   useEffect(() => {
     const t = setTimeout(() => setPulse(false), 3000)
@@ -117,24 +150,22 @@ export function WhatsAppChat() {
   }, [])
 
   useEffect(() => {
-    if (open) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }
+    if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, open])
 
   function handleOption(option: Option) {
     const userMsg: Message = { id: nextId++, from: 'user', text: option.label }
     setMessages((prev) => [...prev, userMsg])
 
-    const faq = FAQ[option.value]
-    if (!faq) return
+    const entry = faq[option.value]
+    if (!entry) return
 
     setTimeout(() => {
       const botMsg: Message = {
         id: nextId++,
         from: 'bot',
-        text: faq.answer,
-        options: faq.options,
+        text: entry.answer,
+        options: entry.options,
       }
       setMessages((prev) => [...prev, botMsg])
 
@@ -143,22 +174,56 @@ export function WhatsAppChat() {
           openWhatsApp(settings.whatsapp_number, 'Hola! Quiero hacer una consulta.')
         }, 800)
       }
-
       if (option.value === 'catalogo') {
+        setTimeout(() => { window.location.href = '/catalogo' }, 1200)
+      }
+      if (option.value === 'ubicacion' && settings.business_address?.trim()) {
+        // Abrir maps después de mostrar la respuesta
         setTimeout(() => {
-          window.location.href = '/catalogo'
-        }, 1200)
+          const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(settings.business_address)}`
+          const mapsMsg: Message = {
+            id: nextId++,
+            from: 'bot',
+            text: '🗺️ ¿Querés abrir la dirección en Google Maps?',
+            options: [
+              { label: '📍 Abrir en Maps', value: '__maps__' },
+              { label: 'No, gracias', value: '__back__' },
+            ],
+          }
+          setMessages((prev) => [...prev, mapsMsg])
+          // Store url for __maps__ handler
+          ;(window as any).__mapsUrl = mapsUrl
+        }, 600)
       }
     }, 500)
   }
 
+  function handleSpecialOption(option: Option) {
+    if (option.value === '__maps__') {
+      window.open((window as any).__mapsUrl, '_blank')
+      return
+    }
+    if (option.value === '__back__') {
+      const backMsg: Message = {
+        id: nextId++,
+        from: 'bot',
+        text: '¡Perfecto! ¿Hay algo más en lo que pueda ayudarte?',
+        options: INITIAL_OPTIONS,
+      }
+      const userMsg: Message = { id: nextId++, from: 'user', text: option.label }
+      setMessages((prev) => [...prev, userMsg, backMsg])
+      return
+    }
+    handleOption(option)
+  }
+
   function formatText(text: string) {
-    return text.split('\n').map((line, i) => (
+    return text.split('\n').map((line, i, arr) => (
       <span key={i}>
         {line.split(/\*(.*?)\*/g).map((part, j) =>
           j % 2 === 1 ? <strong key={j}>{part}</strong> : part,
         )}
-        {i < text.split('\n').length - 1 && <br />}
+        {i < arr.length - 1 && <br />}
       </span>
     ))
   }
@@ -173,16 +238,20 @@ export function WhatsAppChat() {
         )}
       >
         {/* Header */}
-        <div className="bg-[#075e54] px-4 py-3 flex items-center gap-3">
+        <div className="bg-[#075e54] px-4 py-3 flex items-center gap-3 shrink-0">
           <div className="relative">
             <img src="/logo.png" alt="Romero" className="w-10 h-10 rounded-full object-contain bg-white" />
             <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-[#075e54]" />
           </div>
-          <div className="flex-1">
-            <p className="text-white font-semibold text-sm leading-tight">Romero & Co</p>
-            <p className="text-green-300 text-xs">En línea</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-semibold text-sm leading-tight truncate">
+              {settings.business_name || 'Romero & Co'}
+            </p>
+            <p className="text-green-300 text-xs">
+              {settings.business_hours || 'En línea'}
+            </p>
           </div>
-          <button onClick={() => setOpen(false)} className="text-white/70 hover:text-white transition">
+          <button onClick={() => setOpen(false)} className="text-white/70 hover:text-white transition shrink-0">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -190,28 +259,25 @@ export function WhatsAppChat() {
         {/* Messages */}
         <div
           className="flex-1 overflow-y-auto p-3 space-y-3"
-          style={{ background: '#ece5dd url("data:image/svg+xml,%3Csvg width=\'200\' height=\'200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3C/svg%3E")' }}
+          style={{ background: '#ece5dd' }}
         >
           {messages.map((msg) => (
             <div key={msg.id} className={cn('flex flex-col', msg.from === 'user' ? 'items-end' : 'items-start')}>
-              <div
-                className={cn(
-                  'max-w-[85%] px-3 py-2 rounded-2xl text-sm shadow-sm',
-                  msg.from === 'bot'
-                    ? 'bg-white text-gray-800 rounded-tl-none'
-                    : 'bg-[#dcf8c6] text-gray-800 rounded-tr-none',
-                )}
-              >
+              <div className={cn(
+                'max-w-[85%] px-3 py-2 rounded-2xl text-sm shadow-sm',
+                msg.from === 'bot'
+                  ? 'bg-white text-gray-800 rounded-tl-none'
+                  : 'bg-[#dcf8c6] text-gray-800 rounded-tr-none',
+              )}>
                 {formatText(msg.text)}
               </div>
 
-              {/* Options */}
               {msg.options && (
                 <div className="mt-2 flex flex-col gap-1.5 w-full">
                   {msg.options.map((opt) => (
                     <button
                       key={opt.value}
-                      onClick={() => handleOption(opt)}
+                      onClick={() => handleSpecialOption(opt)}
                       className="text-left text-xs bg-white border border-gray-200 hover:bg-[#075e54] hover:text-white hover:border-[#075e54] text-[#075e54] font-medium px-3 py-2 rounded-xl transition-all duration-150 shadow-sm"
                     >
                       {opt.label}
@@ -225,7 +291,7 @@ export function WhatsAppChat() {
         </div>
 
         {/* Footer */}
-        <div className="bg-[#f0f0f0] px-4 py-2 flex items-center gap-2 border-t border-gray-200">
+        <div className="bg-[#f0f0f0] px-4 py-2 flex items-center gap-2 border-t border-gray-200 shrink-0">
           <button
             onClick={() => handleOption({ label: '💬 Hablar con el vendedor', value: 'whatsapp' })}
             className="flex items-center gap-2 bg-[#25d366] text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-[#1da851] transition w-full justify-center"
@@ -236,7 +302,7 @@ export function WhatsAppChat() {
         </div>
       </div>
 
-      {/* FAB Button */}
+      {/* FAB */}
       <button
         onClick={() => setOpen((v) => !v)}
         className="fixed bottom-5 right-4 z-50 w-14 h-14 bg-[#25d366] hover:bg-[#1da851] text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"

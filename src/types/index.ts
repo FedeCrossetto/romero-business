@@ -12,6 +12,8 @@ export interface Product {
   slug: string
   description: string | null
   price: number
+  discount_price: number | null
+  promo_until: string | null
   unit_type: UnitType
   stock: number
   image_url: string | null
@@ -45,4 +47,6 @@ export interface Settings {
   free_shipping_threshold: string
   business_address: string
   business_hours: string
+  announcement_active: string
+  announcement_text: string
 }

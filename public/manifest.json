@@ -1,0 +1,21 @@
+{
+  "name": "Verdulería Romero & Co",
+  "short_name": "Romero & Co",
+  "description": "Productos frescos a tu puerta — verduras, frutas y más",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
