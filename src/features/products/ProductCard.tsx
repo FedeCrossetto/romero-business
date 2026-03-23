@@ -9,11 +9,12 @@ import { useSettings } from '@/hooks/useSettings'
 import { useFavorites } from '@/store/favorites'
 import { useCountdown } from '@/hooks/useCountdown'
 import { openWhatsApp } from '@/lib/whatsapp'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, formatQty } from '@/lib/utils'
 import type { Product } from '@/types'
 
 const LOW_STOCK_THRESHOLD = 5
 const NEW_DAYS = 7
+const KG_CHIPS = [0.25, 0.5, 1, 2]
 
 function isPromoActive(product: Product): boolean {
   if (!product.discount_price) return false
@@ -42,6 +43,9 @@ export function ProductCard({ product }: { product: Product }) {
   const [shadow, setShadow] = useState('0 4px 20px rgba(0,0,0,0.08)')
   const [shine, setShine] = useState({ x: '50%', y: '50%', opacity: 0 })
 
+  const isKg = product.unit_type === 'kg'
+  const step = isKg ? 0.25 : 1
+  const minQty = isKg ? 0.25 : 1
   const outOfStock = product.stock <= 0
   const lowStock = !outOfStock && product.stock <= LOW_STOCK_THRESHOLD
   const promoActive = isPromoActive(product)
@@ -53,10 +57,10 @@ export function ProductCard({ product }: { product: Product }) {
   const urgentPromo = countdown && countdown.total < 48 * 3600000
 
   function handleAdd() {
-    for (let i = 0; i < qty; i++) addItem(product)
+    addItem(product, qty)
     addToast(`${product.name} agregado al carrito`, 'success')
     openCart()
-    setQty(1)
+    setQty(isKg ? 0.5 : 1)
   }
 
   function handleWaitlist() {
@@ -169,20 +173,46 @@ export function ProductCard({ product }: { product: Product }) {
 
         {/* Qty + Add / Waitlist */}
         {!outOfStock ? (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden">
-              <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <Minus className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
-              </button>
-              <span className="px-2 text-sm font-semibold text-gray-800 dark:text-gray-200 min-w-[1.5rem] text-center">{qty}</span>
-              <button onClick={() => setQty((q) => q + 1)} className="px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <Plus className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
-              </button>
-            </div>
-            <Button size="sm" onClick={handleAdd} className="flex-1 shrink-0">
-              <ShoppingCart className="h-4 w-4" />
-              Agregar
-            </Button>
+          <div className="flex flex-col gap-2">
+            {isKg ? (
+              <>
+                <div className="grid grid-cols-4 gap-1">
+                  {KG_CHIPS.map((w) => (
+                    <button
+                      key={w}
+                      onClick={() => setQty(w)}
+                      className={`py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                        qty === w
+                          ? 'bg-primary-600 text-white border-primary-600'
+                          : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-primary-400'
+                      }`}
+                    >
+                      {w < 1 ? `${w * 1000}g` : `${w}kg`}
+                    </button>
+                  ))}
+                </div>
+                <Button size="sm" onClick={handleAdd} className="w-full">
+                  <ShoppingCart className="h-4 w-4" />
+                  Agregar {formatQty(qty, 'kg')}
+                </Button>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden">
+                  <button onClick={() => setQty((q) => Math.max(minQty, parseFloat((q - step).toFixed(2))))} className="px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <Minus className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
+                  </button>
+                  <span className="px-2 text-sm font-semibold text-gray-800 dark:text-gray-200 min-w-[1.5rem] text-center">{qty}</span>
+                  <button onClick={() => setQty((q) => parseFloat((q + step).toFixed(2)))} className="px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <Plus className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
+                  </button>
+                </div>
+                <Button size="sm" onClick={handleAdd} className="flex-1 shrink-0">
+                  <ShoppingCart className="h-4 w-4" />
+                  Agregar
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <button

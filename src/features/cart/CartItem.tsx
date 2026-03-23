@@ -1,11 +1,13 @@
 import { Minus, Plus, Trash2 } from 'lucide-react'
 import { useCartStore } from '@/store/cart'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, effectivePrice, formatQty } from '@/lib/utils'
 import type { CartItem as CartItemType } from '@/types'
 
 export function CartItem({ item }: { item: CartItemType }) {
   const { updateQuantity, removeItem } = useCartStore()
   const { product, quantity } = item
+  const isKg = product.unit_type === 'kg'
+  const step = isKg ? 0.25 : 1
 
   return (
     <div className="flex gap-3 items-start py-4 border-b border-gray-100 last:border-0">
@@ -21,19 +23,19 @@ export function CartItem({ item }: { item: CartItemType }) {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="font-medium text-gray-900 text-sm leading-tight truncate">{product.name}</p>
-        <p className="text-xs text-gray-400 mt-0.5">{formatPrice(product.price)} / {product.unit_type}</p>
+        <p className="text-xs text-gray-400 mt-0.5">{formatPrice(effectivePrice(product))} / {product.unit_type}</p>
 
         <div className="flex items-center gap-2 mt-2">
           <button
-            onClick={() => updateQuantity(product.id, quantity - 1)}
+            onClick={() => updateQuantity(product.id, parseFloat((quantity - step).toFixed(2)))}
             className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition"
             aria-label="Reducir"
           >
             <Minus className="h-3.5 w-3.5" />
           </button>
-          <span className="font-semibold text-sm w-6 text-center">{quantity}</span>
+          <span className="font-semibold text-sm w-10 text-center">{formatQty(quantity, product.unit_type)}</span>
           <button
-            onClick={() => updateQuantity(product.id, quantity + 1)}
+            onClick={() => updateQuantity(product.id, parseFloat((quantity + step).toFixed(2)))}
             className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition"
             aria-label="Aumentar"
           >
@@ -44,7 +46,7 @@ export function CartItem({ item }: { item: CartItemType }) {
 
       {/* Price + remove */}
       <div className="flex flex-col items-end gap-2 shrink-0">
-        <p className="font-bold text-primary-700 text-sm">{formatPrice(product.price * quantity)}</p>
+        <p className="font-bold text-primary-700 text-sm">{formatPrice(effectivePrice(product) * quantity)}</p>
         <button
           onClick={() => removeItem(product.id)}
           className="text-gray-300 hover:text-red-500 transition"

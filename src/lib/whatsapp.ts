@@ -1,5 +1,5 @@
 import type { CartItem, CheckoutFormData } from '@/types'
-import { formatPrice } from './utils'
+import { formatPrice, effectivePrice, formatQty } from './utils'
 
 export function buildWhatsAppMessage(
   items: CartItem[],
@@ -11,13 +11,14 @@ export function buildWhatsAppMessage(
 
   const productLines = items
     .map((item) => {
-      const subtotal = item.product.price * item.quantity
-      return `• ${item.product.name} x ${item.quantity} ${item.product.unit_type} — ${formatPrice(subtotal)}`
+      const subtotal = effectivePrice(item.product) * item.quantity
+      const qtyLabel = formatQty(item.quantity, item.product.unit_type)
+      return `• ${item.product.name} x ${qtyLabel} — ${formatPrice(subtotal)}`
     })
     .join('\n')
 
   const total = items.reduce(
-    (acc, item) => acc + item.product.price * item.quantity,
+    (acc, item) => acc + effectivePrice(item.product) * item.quantity,
     0,
   )
 

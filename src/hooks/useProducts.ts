@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Product } from '@/types'
 
@@ -14,55 +14,50 @@ export function useProducts(options: UseProductsOptions = {}) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
 
-    async function fetch() {
-      setLoading(true)
-      setError(null)
+    let query = supabase
+      .from('products')
+      .select('*, categories(id, name, slug, sort_order, created_at)')
+      .order('created_at', { ascending: false })
 
-      let query = supabase
-        .from('products')
-        .select('*, categories(id, name, slug, sort_order, created_at)')
-        .order('created_at', { ascending: false })
-
-      if (options.active !== false) {
-        query = query.eq('is_active', true)
-      }
-      if (options.featured) {
-        query = query.eq('is_featured', true)
-      }
-      if (options.categorySlug) {
-        query = query.eq('categories.slug', options.categorySlug)
-      }
-      if (options.search) {
-        query = query.ilike('name', `%${options.search}%`)
-      }
-
-      const { data, error: err } = await query
-
-      if (cancelled) return
-
-      if (err) {
-        setError(err.message)
-      } else {
-        // Filter by categorySlug client-side when joining
-        let filtered = (data as Product[]) ?? []
-        if (options.categorySlug) {
-          filtered = filtered.filter(
-            (p) => p.categories?.slug === options.categorySlug,
-          )
-        }
-        setProducts(filtered)
-      }
-      setLoading(false)
+    if (options.active !== false) {
+      query = query.eq('is_active', true)
+    }
+    if (options.featured) {
+      query = query.eq('is_featured', true)
+    }
+    if (options.categorySlug) {
+      query = query.eq('categories.slug', options.categorySlug)
+    }
+    if (options.search) {
+      query = query.ilike('name', `%${options.search}%`)
     }
 
-    fetch()
-    return () => { cancelled = true }
+    const { data, error: err } = await query
+
+    if (err) {
+      setError(err.message)
+    } else {
+      let filtered = (data as Product[]) ?? []
+      if (options.categorySlug) {
+        filtered = filtered.filter((p) => p.categories?.slug === options.categorySlug)
+      }
+      setProducts(filtered)
+    }
+    setLoading(false)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.categorySlug, options.featured, options.search, options.active])
 
-  return { products, loading, error, refetch: () => {} }
+  useEffect(() => {
+    let cancelled = false
+    load().catch(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [load])
+
+  return { products, loading, error, refetch: load }
 }
 
 export function useProduct(slug: string) {

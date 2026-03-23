@@ -12,12 +12,13 @@ import { useFavorites } from '@/store/favorites'
 import { useCountdown } from '@/hooks/useCountdown'
 import { Lightbox } from '@/components/ui/Lightbox'
 import { openWhatsApp } from '@/lib/whatsapp'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, formatQty } from '@/lib/utils'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { PageSpinner } from '@/components/ui/Spinner'
 
 const LOW_STOCK_THRESHOLD = 5
+const KG_CHIPS = [0.25, 0.5, 1, 2]
 
 function isPromoActive(discount_price: number | null, promo_until: string | null): boolean {
   if (!discount_price) return false
@@ -36,6 +37,9 @@ export function ProductDetail() {
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
 
+  const promoActive = product ? isPromoActive(product.discount_price, product.promo_until) : false
+  const countdown = useCountdown(promoActive && product?.promo_until ? product.promo_until : null)
+
   if (loading) return <PageSpinner />
 
   if (error || !product) {
@@ -51,17 +55,17 @@ export function ProductDetail() {
 
   // product is guaranteed non-null here (early return above handles null/error)
   const p = product
+  const isKg = p.unit_type === 'kg'
+  const step = isKg ? 0.25 : 1
+  const minQty = isKg ? 0.25 : 1
   const outOfStock = p.stock <= 0
   const lowStock = !outOfStock && p.stock <= LOW_STOCK_THRESHOLD
-  const promoActive = isPromoActive(p.discount_price, p.promo_until)
   const displayPrice = promoActive && p.discount_price ? p.discount_price : p.price
   const isFav = isFavorite(p.id)
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const countdown = useCountdown(promoActive && p.promo_until ? p.promo_until : null)
   const urgentPromo = countdown && countdown.total < 48 * 3600000
 
   function handleAdd() {
-    for (let i = 0; i < qty; i++) addItem(p)
+    addItem(p, qty)
     addToast(`${p.name} agregado al carrito`, 'success')
     setAdded(true)
     openCart()
@@ -187,19 +191,36 @@ export function ProductDetail() {
           {/* Qty + Add */}
           {!outOfStock ? (
             <div className="space-y-3">
+              {isKg && (
+                <div className="flex gap-2">
+                  {KG_CHIPS.map((w) => (
+                    <button
+                      key={w}
+                      onClick={() => setQty(w)}
+                      className={`flex-1 py-2 rounded-2xl text-sm font-semibold border-2 transition-colors ${
+                        qty === w
+                          ? 'bg-primary-600 text-white border-primary-600'
+                          : 'border-gray-200 text-gray-600 hover:border-primary-400'
+                      }`}
+                    >
+                      {w < 1 ? `${w * 1000}g` : `${w}kg`}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="flex items-center gap-4">
                 <div className="flex items-center border border-gray-200 rounded-2xl overflow-hidden">
                   <button
-                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    onClick={() => setQty((q) => Math.max(minQty, parseFloat((q - step).toFixed(2))))}
                     className="px-4 py-3 hover:bg-gray-50 transition-colors"
                   >
                     <Minus className="h-4 w-4 text-gray-600" />
                   </button>
                   <span className="px-4 text-lg font-bold text-gray-900 min-w-[3rem] text-center">
-                    {qty}
+                    {formatQty(qty, p.unit_type)}
                   </span>
                   <button
-                    onClick={() => setQty((q) => q + 1)}
+                    onClick={() => setQty((q) => parseFloat((q + step).toFixed(2)))}
                     className="px-4 py-3 hover:bg-gray-50 transition-colors"
                   >
                     <Plus className="h-4 w-4 text-gray-600" />

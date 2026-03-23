@@ -5,13 +5,14 @@ import { ProductFilters, type SortOption } from '@/features/products/ProductFilt
 import { useProducts } from '@/hooks/useProducts'
 import { SkeletonGrid } from '@/components/ui/Skeleton'
 import { BackToTop } from '@/components/ui/BackToTop'
+import { effectivePrice } from '@/lib/utils'
 import type { Product } from '@/types'
 
 function sortProducts(products: Product[], sort: SortOption): Product[] {
   const copy = [...products]
   switch (sort) {
-    case 'price_asc': return copy.sort((a, b) => a.price - b.price)
-    case 'price_desc': return copy.sort((a, b) => b.price - a.price)
+    case 'price_asc': return copy.sort((a, b) => effectivePrice(a) - effectivePrice(b))
+    case 'price_desc': return copy.sort((a, b) => effectivePrice(b) - effectivePrice(a))
     case 'name': return copy.sort((a, b) => a.name.localeCompare(b.name))
     default: return copy
   }
