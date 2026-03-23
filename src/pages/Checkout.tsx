@@ -42,14 +42,8 @@ export function Checkout() {
   }
 
   function validate(): boolean {
-    const errs: Partial<CheckoutFormData> = {}
-    if (!form.name.trim()) errs.name = 'Ingresá tu nombre'
-    if (!form.phone.trim()) errs.phone = 'Ingresá tu teléfono'
-    if (form.delivery_type === 'delivery' && !form.address.trim()) {
-      errs.address = 'Ingresá tu dirección para el envío'
-    }
-    setErrors(errs)
-    return Object.keys(errs).length === 0
+    setErrors({})
+    return true
   }
 
   function handleSend() {
@@ -100,7 +94,7 @@ export function Checkout() {
             <h2 className="font-bold text-gray-900">Tus datos</h2>
             <Input
               id="name"
-              label="Nombre y apellido *"
+              label="Nombre y apellido"
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
               error={errors.name}
@@ -108,7 +102,7 @@ export function Checkout() {
             />
             <Input
               id="phone"
-              label="Teléfono / WhatsApp *"
+              label="Teléfono / WhatsApp"
               type="tel"
               value={form.phone}
               onChange={(e) => set('phone', e.target.value)}
@@ -164,7 +158,7 @@ export function Checkout() {
             {form.delivery_type === 'delivery' && (
               <Input
                 id="address"
-                label="Dirección *"
+                label="Dirección"
                 value={form.address}
                 onChange={(e) => set('address', e.target.value)}
                 error={errors.address}

@@ -37,13 +37,18 @@ export function ProductCard({ product }: { product: Product }) {
   const { addToast } = useToast()
   const { settings } = useSettings()
   const { toggle: toggleFav, isFavorite } = useFavorites()
+  const isKg = product.unit_type === 'kg'
+  const customChips = product.quantity_options
+    ? product.quantity_options.split(',').map(Number).filter((n) => !isNaN(n) && n > 0)
+    : null
+  const chips = customChips ?? (isKg ? KG_CHIPS : null)
+
   const cardRef = useRef<HTMLElement>(null)
-  const [qty, setQty] = useState(1)
+  const [qty, setQty] = useState(() => (chips ? chips[0] : 1))
   const [transform, setTransform] = useState('')
   const [shadow, setShadow] = useState('0 4px 20px rgba(0,0,0,0.08)')
   const [shine, setShine] = useState({ x: '50%', y: '50%', opacity: 0 })
 
-  const isKg = product.unit_type === 'kg'
   const step = isKg ? 0.25 : 1
   const minQty = isKg ? 0.25 : 1
   const outOfStock = product.stock <= 0
@@ -60,7 +65,7 @@ export function ProductCard({ product }: { product: Product }) {
     addItem(product, qty)
     addToast(`${product.name} agregado al carrito`, 'success')
     openCart()
-    setQty(isKg ? 0.5 : 1)
+    setQty(chips ? chips[0] : (isKg ? 0.5 : 1))
   }
 
   function handleWaitlist() {
@@ -174,10 +179,10 @@ export function ProductCard({ product }: { product: Product }) {
         {/* Qty + Add / Waitlist */}
         {!outOfStock ? (
           <div className="flex flex-col gap-2">
-            {isKg ? (
+            {chips ? (
               <>
-                <div className="grid grid-cols-4 gap-1">
-                  {KG_CHIPS.map((w) => (
+                <div className={`grid gap-1 ${chips.length <= 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                  {chips.map((w) => (
                     <button
                       key={w}
                       onClick={() => setQty(w)}
@@ -187,13 +192,13 @@ export function ProductCard({ product }: { product: Product }) {
                           : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-primary-400'
                       }`}
                     >
-                      {w < 1 ? `${w * 1000}g` : `${w}kg`}
+                      {isKg ? (w < 1 ? `${w * 1000}g` : `${w}kg`) : `${w} u`}
                     </button>
                   ))}
                 </div>
                 <Button size="sm" onClick={handleAdd} className="w-full">
                   <ShoppingCart className="h-4 w-4" />
-                  Agregar {formatQty(qty, 'kg')}
+                  Agregar {isKg ? formatQty(qty, 'kg') : `${qty} u`}
                 </Button>
               </>
             ) : (

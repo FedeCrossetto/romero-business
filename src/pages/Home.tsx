@@ -6,12 +6,31 @@ import { ProductCard } from '@/features/products/ProductCard'
 import { AnimateOnScroll } from '@/components/ui/AnimateOnScroll'
 import { useProducts } from '@/hooks/useProducts'
 import { SkeletonGrid } from '@/components/ui/Skeleton'
-
 const benefits = [
   { icon: Leaf, title: 'Productos frescos', desc: 'Seleccionados diariamente del mercado.' },
   { icon: Truck, title: 'Envío a domicilio', desc: 'Llevamos tu pedido hasta tu puerta.' },
   { icon: Clock, title: 'Pedido rápido', desc: 'En minutos por WhatsApp, sin complicaciones.' },
   { icon: Star, title: 'Calidad garantizada', desc: 'Si no quedás conforme, lo resolvemos.' },
+]
+const reviews = [
+  {
+    name: 'María González',
+    rating: 5,
+    text: 'Excelente calidad! Las verduras siempre frescas y el servicio es muy rápido. Los recomiendo a todos mis vecinos.',
+    date: 'hace 2 semanas',
+  },
+  {
+    name: 'Carlos Rodríguez',
+    rating: 5,
+    text: 'Muy buena atención y productos de primera. El delivery llega en tiempo y forma. Sin dudas mi verdulería de confianza.',
+    date: 'hace 1 mes',
+  },
+  {
+    name: 'Laura Martínez',
+    rating: 5,
+    text: 'Los mejores precios del barrio y la fruta siempre en su punto. El pedido por WhatsApp es comodísimo.',
+    date: 'hace 3 semanas',
+  },
 ]
 
 export function Home() {
@@ -34,6 +53,15 @@ export function Home() {
         />
         <div className="max-w-6xl mx-auto px-4 py-20 md:py-28 relative">
           <div className="max-w-2xl">
+            {/* Logo grande */}
+            <div className="flex justify-center md:justify-start mb-8">
+              <img
+                src="/logo.png"
+                alt="Romero & Co"
+                className="h-28 w-28 md:h-36 md:w-36 object-contain drop-shadow-2xl"
+              />
+            </div>
+
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur rounded-full px-4 py-1.5 text-sm font-medium mb-6">
               <Leaf className="h-4 w-4" />
               Frescos todos los días
@@ -93,27 +121,8 @@ export function Home() {
         </div>
       </section>
 
-      {/* Benefits */}
-      <section className="max-w-6xl mx-auto px-4 py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-          {benefits.map(({ icon: Icon, title, desc }, i) => (
-            <AnimateOnScroll key={title} delay={i * 100}>
-              <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-card text-center flex flex-col items-center gap-3 h-full">
-                <div className="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center">
-                  <Icon className="h-6 w-6 text-primary-600 dark:text-primary-400" />
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{title}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{desc}</p>
-                </div>
-              </div>
-            </AnimateOnScroll>
-          ))}
-        </div>
-      </section>
-
       {/* Featured products */}
-      <section id="destacados" className="max-w-6xl mx-auto px-4 pb-16">
+      <section id="destacados" className="max-w-6xl mx-auto px-4 py-16">
         <AnimateOnScroll>
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -139,6 +148,74 @@ export function Home() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* Benefits */}
+      <section className="max-w-6xl mx-auto px-4 pb-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+          {benefits.map(({ icon: Icon, title, desc }, i) => (
+            <AnimateOnScroll key={title} delay={i * 100}>
+              <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-card text-center flex flex-col items-center gap-3 h-full">
+                <div className="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center">
+                  <Icon className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{title}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{desc}</p>
+                </div>
+              </div>
+            </AnimateOnScroll>
+          ))}
+        </div>
+      </section>
+
+      {/* Reseñas */}
+      <section className="max-w-6xl mx-auto px-4 pb-16">
+        <AnimateOnScroll>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+                Lo que dicen nuestros clientes
+              </h2>
+              <div className="flex items-center gap-1.5 mt-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                ))}
+                <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">5.0 en Google</span>
+              </div>
+            </div>
+            <a
+              href="https://maps.google.com/?q=Romero+verduleria+14+de+Julio+2842+Lanus+Oeste"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-600 font-semibold text-sm flex items-center gap-1 hover:gap-2 transition-all shrink-0"
+            >
+              Ver en Google <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {reviews.map((r) => (
+              <div key={r.name} className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-card flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold text-sm shrink-0">
+                    {r.name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{r.name}</p>
+                    <p className="text-xs text-gray-400">{r.date}</p>
+                  </div>
+                </div>
+                <div className="flex gap-0.5">
+                  {[...Array(r.rating)].map((_, i) => (
+                    <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{r.text}</p>
+              </div>
+            ))}
+          </div>
+        </AnimateOnScroll>
       </section>
 
       {/* CTA Banner */}

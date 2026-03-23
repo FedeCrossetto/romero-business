@@ -26,6 +26,11 @@ export function Catalog() {
 
   const { products, loading } = useProducts({ search })
 
+  function handleCategoryChange(slug: string) {
+    setCategorySlug(slug)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const filtered = useMemo(() => {
     let list = products
     if (categorySlug) list = list.filter((p) => p.categories?.slug === categorySlug)
@@ -45,7 +50,7 @@ export function Catalog() {
           search={search}
           onSearchChange={setSearch}
           categorySlug={categorySlug}
-          onCategoryChange={setCategorySlug}
+          onCategoryChange={handleCategoryChange}
           sort={sort}
           onSortChange={setSort}
         />

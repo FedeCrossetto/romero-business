@@ -40,6 +40,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
     category_id: product?.category_id ?? '',
     is_featured: product?.is_featured ?? false,
     is_active: product?.is_active ?? true,
+    quantity_options: product?.quantity_options ?? '',
   })
 
   function set<K extends keyof typeof form>(key: K, value: typeof form[K]) {
@@ -83,6 +84,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
       category_id: form.category_id || null,
       is_featured: form.is_featured,
       is_active: form.is_active,
+      quantity_options: form.quantity_options || null,
     }
 
     const { error: saveError } = product
@@ -196,6 +198,61 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                 ...categories.map((c) => ({ value: c.id, label: c.name })),
               ]}
             />
+          </div>
+
+          {/* Quantity options */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">
+              Opciones de cantidad (chips de selección)
+            </label>
+            <p className="text-xs text-gray-400">
+              Marcá las cantidades que el cliente puede elegir. Si no marcás ninguna, se usa el selector +/- estándar.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {(form.unit_type === 'kg'
+                ? [
+                    { val: 0.25, label: '¼ kg (250g)' },
+                    { val: 0.5, label: '½ kg (500g)' },
+                    { val: 1, label: '1 kg' },
+                    { val: 2, label: '2 kg' },
+                  ]
+                : [
+                    { val: 1, label: '1 u' },
+                    { val: 2, label: '2 u' },
+                    { val: 3, label: '3 u' },
+                    { val: 4, label: '4 u' },
+                    { val: 6, label: '6 u' },
+                    { val: 12, label: '12 u' },
+                  ]
+              ).map(({ val, label }) => {
+                const selected = form.quantity_options
+                  ? form.quantity_options.split(',').map(Number).includes(val)
+                  : false
+                function toggle() {
+                  const current = form.quantity_options
+                    ? form.quantity_options.split(',').map(Number).filter(Boolean)
+                    : []
+                  const next = selected
+                    ? current.filter((v) => v !== val)
+                    : [...current, val].sort((a, b) => a - b)
+                  set('quantity_options', next.length ? next.join(',') : '')
+                }
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={toggle}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+                      selected
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'border-gray-200 text-gray-600 hover:border-primary-400'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           {/* Image */}

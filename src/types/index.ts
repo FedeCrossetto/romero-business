@@ -20,6 +20,7 @@ export interface Product {
   category_id: string | null
   is_featured: boolean
   is_active: boolean
+  quantity_options: string | null
   created_at: string
   categories?: Category
 }
