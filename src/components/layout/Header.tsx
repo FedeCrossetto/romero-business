@@ -77,24 +77,19 @@ export function Header() {
         ? 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-md border-b border-gray-100/80 dark:border-gray-800/80'
         : 'bg-white dark:bg-gray-900 border-b border-transparent',
     )}>
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+      <div className="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between gap-3">
 
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 shrink-0">
-          <img src="/logo.png" alt="Romero & Co" className="h-10 w-10 object-contain" />
-          <div className="hidden sm:flex flex-col leading-none">
-            <span className="font-extrabold text-base text-gray-900 dark:text-white tracking-tight">
-              Romero<span className="text-primary-600">&</span>Co
-            </span>
-            <span className={cn(
-              'text-[10px] font-bold px-1.5 py-0.5 rounded-full w-fit mt-0.5 tracking-wide',
-              isOpen
-                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
-                : 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400',
-            )}>
-              {isOpen ? '● Abierto' : '● Cerrado'}
-            </span>
-          </div>
+        <Link to="/" className="flex items-center gap-2 shrink-0">
+          <img src="/logofull.png" alt="Romero & Co" className="h-16 object-contain" />
+          <span className={cn(
+            'text-[10px] font-bold px-1.5 py-0.5 rounded-full tracking-wide',
+            isOpen
+              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+              : 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400',
+          )}>
+            {isOpen ? '● Abierto' : '● Cerrado'}
+          </span>
         </Link>
 
         {/* Nav — desktop */}

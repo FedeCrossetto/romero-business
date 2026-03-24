@@ -32,15 +32,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           {/* Brand */}
           <div className="flex items-center gap-5 min-w-0">
             <Link to="/admin" className="flex items-center gap-2.5 shrink-0">
-              <div className="w-8 h-8 rounded-xl bg-primary-600 flex items-center justify-center shadow-md">
-                <img src="/logo.png" alt="" className="w-6 h-6 object-contain" />
-              </div>
-              <div className="hidden sm:block">
-                <span className="text-white font-bold text-sm tracking-tight">Romero</span>
-                <span className="ml-1.5 text-[10px] font-semibold bg-primary-500/30 text-primary-300 border border-primary-500/40 px-1.5 py-0.5 rounded-full uppercase tracking-widest">
-                  Admin
-                </span>
-              </div>
+              <img src="/logofull.png" alt="Romero & Co" className="h-12 object-contain" />
+              <span className="text-[10px] font-semibold bg-primary-500/30 text-primary-300 border border-primary-500/40 px-1.5 py-0.5 rounded-full uppercase tracking-widest hidden sm:inline">
+                Admin
+              </span>
             </Link>
 
             {/* Separator */}

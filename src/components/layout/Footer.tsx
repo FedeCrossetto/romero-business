@@ -3,11 +3,8 @@ import { MapPin } from 'lucide-react'
 export function Footer() {
   return (
     <footer className="bg-gray-900 text-gray-400 mt-20">
-      <div className="max-w-6xl mx-auto px-4 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-2 text-white font-bold text-lg">
-          <img src="/logo.png" alt="Romero & Co" className="h-10 w-10 object-contain" />
-          Romero &amp; Co
-        </div>
+      <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <img src="/logofull.png" alt="Romero & Co" className="h-12 object-contain" />
 
         <p className="text-sm text-center">
           Productos frescos directo del productor a tu mesa.
