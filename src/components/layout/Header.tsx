@@ -17,11 +17,12 @@ const DAY_MAP: Record<string, number> = {
   Dom: 0, Lun: 1, Mar: 2, 'Mié': 3, Jue: 4, Vie: 5, 'Sáb': 6,
 }
 
-function parseOpen(hoursStr: string): boolean {
+function getOpenStatus(hoursStr: string): { open: boolean; tooltip: string } {
   const now = new Date()
   const currentDay = now.getDay()
   const nowMins = now.getHours() * 60 + now.getMinutes()
   const toMins = (h: string, m: string) => parseInt(h) * 60 + parseInt(m)
+  const fmt = (h: string, m: string) => `${h.padStart(2, '0')}:${m.padStart(2, '0')}`
 
   function inDayRange(startDayStr: string, endDayStr: string) {
     const s = DAY_MAP[startDayStr] ?? 1
@@ -33,17 +34,25 @@ function parseOpen(hoursStr: string): boolean {
   const two = hoursStr.match(/(\S+)-(\S+)\s+(\d+):(\d+)\s+a\s+(\d+):(\d+)\s+y\s+(\d+):(\d+)\s+a\s+(\d+):(\d+)/)
   if (two) {
     const [, sd, ed, sh1, sm1, eh1, em1, sh2, sm2, eh2, em2] = two
-    if (!inDayRange(sd, ed)) return false
-    return (nowMins >= toMins(sh1, sm1) && nowMins < toMins(eh1, em1)) ||
-           (nowMins >= toMins(sh2, sm2) && nowMins < toMins(eh2, em2))
+    if (!inDayRange(sd, ed)) return { open: false, tooltip: `Abrimos el próximo día hábil a las ${fmt(sh1, sm1)}` }
+    if (nowMins >= toMins(sh1, sm1) && nowMins < toMins(eh1, em1))
+      return { open: true, tooltip: `Abiertos hasta las ${fmt(eh1, em1)}` }
+    if (nowMins >= toMins(sh2, sm2) && nowMins < toMins(eh2, em2))
+      return { open: true, tooltip: `Abiertos hasta las ${fmt(eh2, em2)}` }
+    if (nowMins < toMins(sh1, sm1)) return { open: false, tooltip: `Abrimos a las ${fmt(sh1, sm1)}` }
+    if (nowMins < toMins(sh2, sm2)) return { open: false, tooltip: `Abrimos a las ${fmt(sh2, sm2)}` }
+    return { open: false, tooltip: `Abrimos mañana a las ${fmt(sh1, sm1)}` }
   }
 
   // Single interval: "Lun-Sáb 8:00 a 20:00"
   const one = hoursStr.match(/(\S+)-(\S+)\s+(\d+):(\d+)\s+a\s+(\d+):(\d+)/)
-  if (!one) return true
+  if (!one) return { open: true, tooltip: '' }
   const [, sd, ed, sh, sm, eh, em] = one
-  if (!inDayRange(sd, ed)) return false
-  return nowMins >= toMins(sh, sm) && nowMins < toMins(eh, em)
+  if (!inDayRange(sd, ed)) return { open: false, tooltip: `Abrimos el próximo día hábil a las ${fmt(sh, sm)}` }
+  if (nowMins >= toMins(sh, sm) && nowMins < toMins(eh, em))
+    return { open: true, tooltip: `Abiertos hasta las ${fmt(eh, em)}` }
+  if (nowMins < toMins(sh, sm)) return { open: false, tooltip: `Abrimos a las ${fmt(sh, sm)}` }
+  return { open: false, tooltip: `Abrimos mañana a las ${fmt(sh, sm)}` }
 }
 
 export function Header() {
@@ -54,11 +63,11 @@ export function Header() {
   const itemCount = items.reduce((acc, i) => acc + i.quantity, 0)
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
+  const [openStatus, setOpenStatus] = useState<{ open: boolean; tooltip: string }>({ open: false, tooltip: '' })
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
-    function update() { setIsOpen(parseOpen(settings.business_hours)) }
+    function update() { setOpenStatus(getOpenStatus(settings.business_hours)) }
     update()
     const timer = setInterval(update, 60_000)
     return () => clearInterval(timer)
@@ -82,13 +91,20 @@ export function Header() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
           <img src="/logofull.png" alt="Romero & Co" className="h-16 object-contain" />
-          <span className={cn(
-            'text-[10px] font-bold px-1.5 py-0.5 rounded-full tracking-wide',
-            isOpen
-              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
-              : 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400',
-          )}>
-            {isOpen ? '● Abierto' : '● Cerrado'}
+          <span className="relative group cursor-default">
+            <span className={cn(
+              'text-[10px] font-bold px-1.5 py-0.5 rounded-full tracking-wide',
+              openStatus.open
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                : 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400',
+            )}>
+              {openStatus.open ? '● Abierto' : '● Cerrado'}
+            </span>
+            {openStatus.tooltip && (
+              <span className="pointer-events-none absolute left-1/2 top-full mt-1.5 z-50 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 dark:bg-gray-700">
+                {openStatus.tooltip}
+              </span>
+            )}
           </span>
         </Link>
 
@@ -116,11 +132,18 @@ export function Header() {
         {/* Right actions */}
         <div className="flex items-center gap-1">
           {/* Open/closed — mobile */}
-          <span className={cn(
-            'sm:hidden text-[10px] font-bold px-2 py-0.5 rounded-full mr-1',
-            isOpen ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600',
-          )}>
-            {isOpen ? '●' : '●'}
+          <span className="relative group cursor-default sm:hidden mr-1">
+            <span className={cn(
+              'text-[10px] font-bold px-2 py-0.5 rounded-full',
+              openStatus.open ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600',
+            )}>
+              ●
+            </span>
+            {openStatus.tooltip && (
+              <span className="pointer-events-none absolute left-1/2 top-full mt-1.5 z-50 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+                {openStatus.tooltip}
+              </span>
+            )}
           </span>
 
           {/* Dark mode */}
